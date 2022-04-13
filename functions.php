@@ -20,10 +20,6 @@ function tdwd_add_extra_fields( $checkout ) {
             'unselected'	=> __( 'Please Enter a Valid Postal Code', 'tdwd' ),
         )
     ),$checkout->get_value( 'Location' ));
-
-    echo "<pre>";
-    print_r($checkout);
-    echo "</pre>";
 }
 
 add_action( 'wp_footer', 'tdwd_add_js_to_checkout', 9999 );
@@ -95,6 +91,9 @@ function tdwd_get_fitting_locations() {
 }
 
 
+
+
+add_filter( 'woocommerce_checkout_fields', 'tdwd_remove_billing_fields' );
 function tdwd_remove_billing_fields($fields) {
     unset($fields['billing']['billing_first_name']);
     unset($fields['billing']['billing_last_name']);
@@ -110,25 +109,36 @@ function tdwd_remove_billing_fields($fields) {
     unset($fields['billing']['billing_postcode']);
     return $fields;
 }
-add_filter( 'woocommerce_checkout_fields', 'tdwd_remove_billing_fields' );
 
 
 
 
 
-function dack25_save_extra_checkout_fields( $order_id, $posted ){
-    // don't forget appropriate sanitization
-    if( isset( $posted['Postcode'] ) ) {
-        update_post_meta( $order_id, '_Postcode', sanitize_text_field( $posted['Postcode'] ) );
+add_action( 'woocommerce_checkout_update_order_meta', 'dack25_save_extra_checkout_fields', 10, 1 );
+function dack25_save_extra_checkout_fields( $order_id ){
+    if( isset($_POST['Postcode'] ) ) {
+     update_post_meta( $order_id, '_Postcode', sanitize_text_field( $_POST['Postcode'] ) );
     }
 
-    if( isset( $posted['Location'] ) ) {
-        update_post_meta( $order_id, '_Location', sanitize_text_field( $posted['Location'] ) );
+    if( isset( $_POST['Location'] ) ) {
+        update_post_meta( $order_id, '_Location', sanitize_text_field( $_POST['Location'] ) );
     }
 }
 
-add_action( 'woocommerce_checkout_update_order_meta', 'dack25_save_extra_checkout_fields', 10, 2 );
 
+
+
+add_action('woocommerce_checkout_process', 'dack25_check_if_selected');
+function dack25_check_if_selected() {
+
+    // you can add any custom validations here
+    if ( empty( $_POST['Location'] ) )
+        wc_add_notice( 'Please Location by pin code.', 'error' );
+
+    if ( empty( $_POST['Postcode'] ) )
+        wc_add_notice( 'Please enter pincode and select appropriate location.', 'error' );
+    
+}
 
 
 // Display the Data to User
